@@ -8,3 +8,5 @@ Data generation driven machine learning pipeline for BCIs, which includes brain 
 
 ![intro](https://github.com/user-attachments/assets/c1800138-a51d-4b6d-b14e-7f5369dc0535)
 
+<p align="center"><font color="gray">Figure 1: Data generation driven machine learning pipeline for BCIs.</font></p>
+
