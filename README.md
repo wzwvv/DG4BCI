@@ -1,6 +1,5 @@
 <div align="center">
-<h1>Synthetic Data Generation for Brain-Computer Interfaces</h1>
-<h3>Overview, Benchmarking, and Future Directions</h3>
+<h1>Synthetic Data Generation for Brain-Computer Interfaces: Overview, Benchmarking, and Future Directions</h1>
 
 [Ziwei Wang](https://scholar.google.com/citations?user=fjlXqvQAAAAJ&hl=en)<sup>1</sup>, Zhentao He, [Xingyi He](https://github.com/BAY040210)<sup>1</sup>, [Hongbin Wang](https://github.com/WangHongbinary)<sup>1</sup>, [Tianwang Jia](https://github.com/TianwangJia)<sup>1</sup>, Jingwei Luo, [Siyang Li](https://scholar.google.com/citations?user=5GFZxIkAAAAJ&hl=en)<sup>1</sup>, [Xiaoqing chen](https://scholar.google.com/citations?user=LjfCH7cAAAAJ&hl=en), and [Dongrui Wu](https://scholar.google.com/citations?user=UYGzCPEAAAAJ&hl=en)<sup>1 :email:</sup>
 
