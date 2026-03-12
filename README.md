@@ -16,7 +16,7 @@ This survey provides a comprehensive review of brain signal generation for BCIs,
 ## Data scarcity in BCI
 Recent success of deep learning underscores the importance of large, high-quality training data. For example, Google’s trillion-word corpus has significantly boosted performance in language models. However, acquiring sufficient brain signals presents challenges.
 
-<p align="center"><img width="394" height="426" alt="image" src="https://github.com/user-attachments/assets/018b5b9b-6fe0-45b5-8a9f-b29d6568ab5c" /></p>
+<p align="center"><img width="492.5" height="532.5" alt="image" src="https://github.com/user-attachments/assets/018b5b9b-6fe0-45b5-8a9f-b29d6568ab5c" /></p>
 
 <p align="center"><font color="gray">Figure 1: Data scarcity issue in BCI.</font></p>
 
