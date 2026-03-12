@@ -4,8 +4,8 @@ coding:utf-8
 @Time:      2026/3/12 20:37
 @File:      MMD.py
 @Author:    Ziwei Wang
-@Function:  生成数据评测指标 - Maximum Mean Discrepancy (MMD)
-            衡量真实与生成特征的相似程度，越小越相似
+@Function:  Evaluation metric for generated data - Maximum Mean Discrepancy (MMD).
+            Measures similarity between real and generated features; lower is more similar.
 =================================================
 '''
 

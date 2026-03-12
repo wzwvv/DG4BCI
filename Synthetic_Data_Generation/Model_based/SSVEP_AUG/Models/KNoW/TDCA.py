@@ -113,8 +113,8 @@ def proj_ref(Yf):
     :return:
     '''
     Q, R = qr(Yf.T, mode="economic")
-    # 计算投影矩阵P
-    P = Q @ Q.T  # @ 表示矩阵乘法
+    # Compute projection matrix P
+    P = Q @ Q.T  # @ is matrix multiplication
     return P
 
 

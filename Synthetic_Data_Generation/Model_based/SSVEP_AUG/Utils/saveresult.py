@@ -13,15 +13,15 @@ def train_params(ws_conf, section_name, params_dict):
 
 def write_to_excel(Kf, subject, ACC,filename="VAE_output.xlsx", sheetname="Sheet1"):
     """
-    Kf: 数值或字符串
-    subject: 数值或字符串
-    A: 包含3个元素的列表
+    Kf: numeric or string
+    subject: numeric or string
+    ACC: list of 10 elements (accuracies)
     """
     if len(ACC) != 10:
         print(ACC)
-        raise ValueError("ACC 必须是一个包含10个元素的列表")
+        raise ValueError("ACC must be a list of 10 elements")
 
-    # 如果文件存在，加载；否则新建
+    # If file exists, load it; otherwise create new workbook
     if os.path.exists(filename):
         wb = load_workbook(filename)
         if sheetname in wb.sheetnames:
@@ -34,7 +34,7 @@ def write_to_excel(Kf, subject, ACC,filename="VAE_output.xlsx", sheetname="Sheet
         wb = Workbook()
         ws = wb.active
         ws.title = sheetname
-        # 如果新建表，先写表头
+        # Write header for new sheet
         ws.append(["Kf", "subject", "FBCCA_acc_raw", "FBCCA_acc_aug", "TRCA_acc_raw", "TRCA_acc_aug","EEGNet_acc_raw", "EEGNet_acc_aug","CCNN_acc_raw", "CCNN_acc_aug","SSVEPNet_acc_raw", "SSVEPNet_acc_aug"])
     # sheet_conf = "conf"+sheetname
     # if sheet_conf not in wb.sheetnames:
@@ -44,5 +44,5 @@ def write_to_excel(Kf, subject, ACC,filename="VAE_output.xlsx", sheetname="Sheet
     #     train_params(ws_conf, "gan_model_param", config["gan_model_param"])
     ws.append([Kf, subject, ACC[0], ACC[1], ACC[2],ACC[3], ACC[4], ACC[5], ACC[6],ACC[7], ACC[8], ACC[9]])
 
-    # 保存
+    # Save workbook
     wb.save(filename)

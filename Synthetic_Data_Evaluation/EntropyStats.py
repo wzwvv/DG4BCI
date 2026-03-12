@@ -3,8 +3,8 @@
 coding:utf-8
 @File:      EntropyStats.py
 @Author:    Ziwei Wang
-@Function:  生成数据评测指标 - 基于熵的统计量
-            熵越高多样性越大；与真实分布熵的差异可衡量分布匹配
+@Function:  Evaluation metric for generated data - Entropy-based statistics.
+            Higher entropy means more diversity; difference from real entropy measures distribution match.
 =================================================
 '''
 
@@ -13,13 +13,13 @@ from typing import Tuple, Optional
 
 
 def _entropy_discrete(probs: np.ndarray, axis: int = -1, eps: float = 1e-8) -> np.ndarray:
-    """离散分布的熵 H = -sum(p*log(p))，probs 沿 axis 和为 1。"""
+    """Entropy of discrete distribution H = -sum(p*log(p)); probs sum to 1 along axis."""
     probs = np.clip(probs, eps, 1.0)
     return -np.sum(probs * np.log(probs), axis=axis)
 
 
 def _entropy_continuous_histogram(x: np.ndarray, n_bins: int = 50, axis: int = -1) -> float:
-    """用直方图估计一维或多维分布的熵（连续近似）。"""
+    """Estimate entropy of 1D or multidimensional distribution via histogram (continuous approximation)."""
     x = np.asarray(x).reshape(-1)
     hist, _ = np.histogram(x, bins=n_bins, density=True)
     hist = hist + 1e-8
@@ -33,23 +33,23 @@ def compute_entropy_stats(
     n_bins: int = 50,
 ) -> Tuple[float, float, float]:
     """
-    基于熵的统计量（在特征空间上）。
+    Entropy-based statistics in feature space.
 
     Parameters
     ----------
     real_features : np.ndarray, shape (N, D)
     gen_features : np.ndarray, shape (M, D)
     n_bins : int
-        估计边际熵时的分箱数
+        Number of bins for marginal entropy estimation.
 
     Returns
     -------
     real_entropy : float
-        真实特征分布（每维直方图）的平均边际熵
+        Mean marginal entropy of real feature distribution (per-dim histogram).
     gen_entropy : float
-        生成特征分布的平均边际熵
+        Mean marginal entropy of generated feature distribution.
     entropy_diff : float
-        |gen_entropy - real_entropy|，越小越接近
+        |gen_entropy - real_entropy|; lower means closer match.
     """
     real = np.asarray(real_features, dtype=np.float64)
     gen = np.asarray(gen_features, dtype=np.float64)
@@ -60,7 +60,7 @@ def compute_entropy_stats(
     n_r, d = real.shape
     n_g, d_g = gen.shape
     if d != d_g:
-        raise ValueError(f"特征维度不一致: real {d} vs gen {d_g}")
+        raise ValueError(f"Feature dimension mismatch: real {d} vs gen {d_g}")
 
     real_entropies = []
     gen_entropies = []
@@ -80,9 +80,9 @@ def compute_prediction_entropy(
     num_classes: int,
 ) -> Tuple[float, float]:
     """
-    用真实数据训练分类器，在生成数据上预测，计算预测分布的熵。
-    - 预测熵高：生成样本难以被分类（可能多样或噪声大）
-    - 可与真实集上的预测熵对比
+    Train classifier on real data, predict on generated data, compute entropy of prediction distribution.
+    - High prediction entropy: generated samples hard to classify (diverse or noisy).
+    - Can compare with prediction entropy on real set.
 
     Parameters
     ----------
@@ -94,15 +94,15 @@ def compute_prediction_entropy(
     Returns
     -------
     real_pred_entropy : float
-        真实样本上的平均预测熵
+        Mean prediction entropy on real samples.
     gen_pred_entropy : float
-        生成样本上的平均预测熵
+        Mean prediction entropy on generated samples.
     """
     try:
         from sklearn.linear_model import LogisticRegression
         from sklearn.preprocessing import StandardScaler
     except ImportError:
-        raise ImportError("EntropyStats 需要 sklearn: pip install scikit-learn")
+        raise ImportError("EntropyStats requires sklearn: pip install scikit-learn")
 
     scaler = StandardScaler()
     real_scaled = scaler.fit_transform(real_features)
@@ -118,8 +118,8 @@ def compute_prediction_entropy(
 
 def compute_entropy_diversity(gen_features: np.ndarray, n_bins: int = 30) -> float:
     """
-    仅对生成集：计算特征分布的（平均边际）熵，作为多样性指标。
-    越大表示生成分布越分散。
+    For generated set only: compute (mean marginal) entropy of feature distribution as diversity metric.
+    Higher means more spread of the generated distribution.
 
     Parameters
     ----------

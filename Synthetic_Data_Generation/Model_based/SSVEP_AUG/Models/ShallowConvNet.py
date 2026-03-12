@@ -41,7 +41,7 @@ class ShallowConvNet(nn.Module):
         self.clf = nn.Linear(self.n_outputs, self.n_classes)
 
     def forward(self, x):
-        # x = x.permute(0, 1, 3, 2)  #跑pretrian的时候关一下
+        # x = x.permute(0, 1, 3, 2)  # disable when running pretrain
         x = self.layer1(x)
         x = torch.square(x)
         x = torch.nn.functional.avg_pool2d(x, (1, 75), 15)

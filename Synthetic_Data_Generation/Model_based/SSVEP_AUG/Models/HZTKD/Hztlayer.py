@@ -79,10 +79,10 @@ class KLGlayer(nn.Module):
                 self.channels = self.select_channel_BETA()#[47, 53, 54, 55, 56, 57, 60, 61, 62]
         else:
             self.channels =[i for i in range(self.Nc)]
-            # 绘制原始信号
+            # Plot raw signal (commented out)
         # plt.figure(figsize=(10, 6))
         # plt.subplot(2, 1, 1)
-        # 计算信号的频谱（通过FFT）
+        # Signal spectrum via FFT
         # eeg=self.Bandpasslayer(torch.tensor(eeg_data_train, dtype=torch.float32)).detach().numpy()
         # print(eeg.shape)
         # f_signal = np.fft.fft(np.mean(eeg[12, 0, self.channels, :], axis=0))
@@ -219,7 +219,7 @@ class KLGlayer(nn.Module):
         channel_names = [ch[0].upper() for ch in raw_channels]
 
         def get_channel_indices(channel_names, target_channels):
-            # 转为大写后匹配
+            # Match after converting to uppercase
             target_set = {ch.upper().strip() for ch in target_channels}
             return [i for i, ch in enumerate(channel_names) if ch in target_set]
 
@@ -245,7 +245,7 @@ class KLGlayer(nn.Module):
 class BandpassConvLayer(nn.Module):
     def __init__(self, Fs=250, initfreq = 8, deltafreq=0.2 , Nf = 40, Nm=1, kernel_size=63,Bandpass_FIX=False):
         super(BandpassConvLayer, self).__init__()
-        # 计算奈奎斯特频率
+        # Nyquist frequency
         nyquist = Fs // 2
         self.Nm = Nm
         self.conv = nn.ModuleList(
@@ -256,18 +256,18 @@ class BandpassConvLayer(nn.Module):
             for param in self.conv[j].parameters():
                 if Bandpass_FIX:
                     param.requires_grad = False
-            Wp = [initfreq*(j+1)/nyquist, (initfreq*(j+1)+deltafreq*(Nf-1))/ nyquist]  # 归一化通带频率
-            Ws = [(initfreq*(j+1)-2) / nyquist,(initfreq*(j+1)+deltafreq*Nf+2)/ nyquist]  # 归一化阻带频率
-            gpass = 1  # 通带最大衰减
-            gstop = 40  # 阻带最小衰减
-            # 设计Chebyshev滤波器
+            Wp = [initfreq*(j+1)/nyquist, (initfreq*(j+1)+deltafreq*(Nf-1))/ nyquist]  # normalized passband
+            Ws = [(initfreq*(j+1)-2) / nyquist,(initfreq*(j+1)+deltafreq*Nf+2)/ nyquist]  # normalized stopband
+            gpass = 1  # max passband attenuation (dB)
+            gstop = 40  # min stopband attenuation (dB)
+            # Design Chebyshev filter
             N, Wn = signal.cheb1ord(Wp, Ws, gpass, gstop)
             N, Wn = signal.cheb1ord(Wp, Ws, gpass, gstop)
             B, A = signal.cheby1(N, gpass, Wn, btype='bandpass', analog=False)[:]
 
-            # 计算离散系统的冲激响应
+            # Discrete system impulse response
             impulse_response = signal.lfilter(B, A, np.append(1, np.zeros(kernel_size - 1)))
-            # 赋值卷积核权重
+            # Set conv kernel weights
             with torch.no_grad():
                 self.conv[j].weight.copy_(torch.tensor(impulse_response).reshape(1, 1, -1))
     def forward(self, x):
@@ -302,7 +302,7 @@ class FBlayer(nn.Module):
             if x.ndim != 4: #Nh,Nm,Nf,Nt
                 raise ValueError(f'X.ndim must be 4 but got {x.shape}')
             x=x.flatten(start_dim=1, end_dim=2)
-            return (x * self.weights).unsqueeze(1)  # 按通道加权
+            return (x * self.weights).unsqueeze(1)  # weight by channel
         else:
             if x.ndim != 3: #Nh,Nm,Nf
                 raise ValueError(f'X.ndim must be 3 but got {x.shape}')
@@ -334,7 +334,7 @@ class MIXlayer(nn.Module):
             output = (x * self.weights).unsqueeze(1)
             output = output.reshape(a,b,c,d)
             output = output.sum(dim=1, keepdim=True)
-            return   output# 按通道加权
+            return output  # weight by channel
         else:
             if x.ndim != 3: #Nh,Nm,Nf
                 raise ValueError(f'X.ndim must be 3 but got {x.shape}')
@@ -404,7 +404,7 @@ class TRCAlayer(nn.Module):
         labels = labels
         for fb_i in range (self.Nm):
             for c in range(self.Nf):
-                # 提取当前类别的所有试次数据
+                # Extract all trials for current class
                 if X.ndim == 4:
                     X_c = X[labels == c]
                     X_c = X_c[:, fb_i, self.channels,  :]
@@ -412,29 +412,29 @@ class TRCAlayer(nn.Module):
                     raise ValueError(f'X.ndim must be 4 but got {X_c.shape}')
 
                 n_trials, n_channels, n_samples = X_c.shape
-                # 初始化协方差矩阵
-                S = np.zeros((n_channels, n_channels))  # 组内协方差
-                Q = np.zeros((n_channels, n_channels))  # 组间协方差
-                # 计算协方差矩阵
+                # Initialize covariance matrices
+                S = np.zeros((n_channels, n_channels))  # within-class
+                Q = np.zeros((n_channels, n_channels))  # between-class
+                # Compute covariance
                 for i in range(n_trials):
                     Xi = X_c[i].copy()
-                    Xi -= Xi.mean(axis=1,keepdims=True)  # 中心化
-                    Q += Xi @ Xi.T  # 更新组间协方差
+                    Xi -= Xi.mean(axis=1,keepdims=True)  # center
+                    Q += Xi @ Xi.T  # update between-class
 
-                    # 计算组内协方差（避免重复计算）
+                    # Within-class covariance (avoid double count)
                     for j in range(i + 1, n_trials):
                         Xj = X_c[j].copy()
                         Xj -= Xj.mean(axis=1, keepdims=True)
                         S += Xi @ Xj.T + Xj @ Xi.T
                 Q += 1e-8 * np.eye(n_channels)
                 try:
-                    S_intra_inv = np.linalg.inv(Q)  # 计算类内协方差矩阵的逆
+                    S_intra_inv = np.linalg.inv(Q)  # inverse of within-class covariance
                 except np.linalg.LinAlgError:
-                    # 如果无法计算逆，使用伪逆
+                    # Use pseudo-inverse if singular
                     S_intra_inv = np.linalg.pinv(Q)
-                # 计算广义特征值问题
+                # Generalized eigenvalue problem
                 eigvals, eigvecs = np.linalg.eig(S_intra_inv @ S)
-                sorted_indices = np.argsort(eigvals)[::-1]  # 从大到小排序
+                sorted_indices = np.argsort(eigvals)[::-1]  # sort descending
                 W = eigvecs[:, sorted_indices[:self.n_components]].T
                 with torch.no_grad():
                     self.W[fb_i,c,self.channels] = torch.tensor(W,dtype=torch.float32)
@@ -652,15 +652,15 @@ class TDCAlayer(nn.Module):
 # fs=250
 #
 # t = np.linspace(0, 1, fs)
-# # 示例输入：32个批次，3个通道，长度为256的信号
+# # Example input: 32 batches, 3 channels, 256 time points
 # input_signal = torch.tensor(np.sin(2 * np.pi * 8 * t)+np.sin(2 * np.pi * 16 * t),dtype=torch.float32).unsqueeze(0).unsqueeze(0)
 # #print(input_signal)
 # model = BandpassConvLayer()
 # output = model(input_signal)
-# # 绘制原始信号
+# # Plot raw signal
 # plt.figure(figsize=(10, 6))
 # plt.subplot(2, 1, 1)
-# # 计算信号的频谱（通过FFT）
+# # Signal spectrum via FFT
 # f_signal = np.fft.fft(output.detach().numpy())
 # f_signal_freq = np.fft.fftfreq(len(t), 1/250)
 # f_signal_magnitude = np.abs(f_signal)[0][39]
@@ -669,16 +669,16 @@ class TDCAlayer(nn.Module):
 # plt.xlabel("Time [s]")
 # plt.ylabel("Amplitude")
 #
-# # 计算信号的频谱（通过FFT）
+# # Signal spectrum via FFT
 # f_signal = np.fft.fft(input_signal)
 # f_signal_freq = np.fft.fftfreq(len(t), 1/250)
 # f_signal_magnitude = np.abs(f_signal)[0][0]
 #
-# # 绘制信号的频谱
+# # Plot signal spectrum
 # plt.subplot(2, 1, 2)
-# plt.plot(f_signal_freq[:64], f_signal_magnitude[:64])  # 只显示正频率部分
+# plt.plot(f_signal_freq[:64], f_signal_magnitude[:64])  # positive frequencies only
 # plt.title("Original Signal Spectrum")
 # plt.xlabel("Frequency [Hz]")
 # plt.ylabel("Magnitude")
 # plt.show()
-# print(output.shape)  # 查看输出形状
+# print(output.shape)  # check output shape

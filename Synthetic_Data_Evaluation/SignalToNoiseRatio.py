@@ -3,8 +3,8 @@
 coding:utf-8
 @File:      SignalToNoiseRatio.py
 @Author:    Ziwei Wang
-@Function:  生成数据评测指标 - 信噪比 (SNR)
-            在特征空间或信号空间衡量“信号强度”相对“噪声/变异”的比值
+@Function:  Evaluation metric for generated data - Signal-to-Noise Ratio (SNR).
+            Measures the ratio of "signal strength" to "noise/variance" in feature or signal space.
 =================================================
 '''
 
@@ -18,27 +18,27 @@ def compute_snr_features(
     method: Literal["mean_std", "power_ratio"] = "mean_std",
 ) -> float:
     """
-    在特征空间上定义 SNR。
-    - mean_std: 将 real 视为“信号”，gen 与 real 的差异视为“噪声”：
-      signal = ||mean(real)||, noise = std(gen - real_align)，其中 real_align 为 real 对 gen 的配对或均值对齐
-    - 简化：signal = mean(||real||_2) 或 std(real)，noise = mean(||gen - mean(real)||) 等。
+    Define SNR in feature space.
+    - mean_std: treat real as "signal", gen vs real difference as "noise":
+      signal = ||mean(real)||, noise = std(gen - real_align), where real_align is pairing or mean alignment of real to gen.
+    - Simplified: signal = mean(||real||_2) or std(real), noise = mean(||gen - mean(real)||), etc.
 
-    这里采用：signal = 真实特征各维的标准差均值（信号强度），
-             noise = 生成与真实均值之差的范数（生成偏离真实中心的程度），
-             SNR = signal / (noise + eps)。
+    Here we use: signal = mean of per-dimension std of real features (signal strength),
+                 noise = norm of (gen - mean(real)) (how much generated samples deviate from real center),
+                 SNR = signal / (noise + eps).
 
     Parameters
     ----------
     real_features : (N, D)
     gen_features : (M, D)
     method : "mean_std" | "power_ratio"
-        mean_std: signal=real 各维 std 的均值，noise=gen 到 real 均值的距离的均值
-        power_ratio: 用方差比
+        mean_std: signal = mean of per-dim std of real, noise = mean distance from gen to real mean
+        power_ratio: use variance ratio
 
     Returns
     -------
     float
-        SNR（标量），越大表示生成越接近真实分布的中心/尺度
+        SNR (scalar); higher means generated data is closer to real distribution center/scale.
     """
     real = np.asarray(real_features, dtype=np.float64)
     gen = np.asarray(gen_features, dtype=np.float64)
@@ -51,12 +51,12 @@ def compute_snr_features(
 
     if method == "mean_std":
         signal = np.mean(np.std(real, axis=0)) + eps
-        # 生成样本到真实均值的平均距离（作为“噪声”）
+        # Mean distance of generated samples to real mean (as "noise")
         diff = gen - mu_r
         noise = np.sqrt(np.mean(diff ** 2)) + eps
         return float(signal / noise)
 
-    # power_ratio: 真实方差 / 生成相对真实均值的均方误差
+    # power_ratio: real variance / MSE of gen relative to real mean
     var_r = np.mean(np.var(real, axis=0)) + eps
     mse_gen = np.mean(np.sum((gen - mu_r) ** 2, axis=1)) + eps
     return float(var_r / mse_gen)
@@ -69,20 +69,20 @@ def compute_snr_eeg(
     axis_time: int = -1,
 ) -> Union[float, np.ndarray]:
     """
-    在原始 EEG 信号空间计算 SNR。
-    将 real 视为参考信号，gen 与 real 的差异视为噪声（例如条件生成中一一对应时）。
-    若不对应，则用 real 的方差作为信号功率，gen 的方差或 gen 与 real 均值的差作为噪声。
+    Compute SNR in raw EEG signal space.
+    Treat real as reference signal; difference (gen - real) as noise (e.g. in paired conditional generation).
+    If not paired: use real variance as signal power, gen variance or (gen - mean(real)) as noise.
 
     Parameters
     ----------
-    real_eeg : np.ndarray, shape (N, C, T) 或 (N, T)
-        真实 EEG
-    gen_eeg : np.ndarray, shape (M, C, T) 或 (M, T)
-        生成 EEG，若 N==M 可视为一一对应
+    real_eeg : np.ndarray, shape (N, C, T) or (N, T)
+        Real EEG.
+    gen_eeg : np.ndarray, shape (M, C, T) or (M, T)
+        Generated EEG; if N==M can be treated as one-to-one paired.
     per_channel : bool
-        True 时返回每通道的 SNR（对 (N,C,T) 在 C 上保留）
+        If True, return per-channel SNR (keep channel axis for (N,C,T)).
     axis_time : int
-        时间轴索引，用于在时间上求功率
+        Time axis index for computing power over time.
 
     Returns
     -------
@@ -95,12 +95,12 @@ def compute_snr_eeg(
     n_r, n_g = real.shape[0], gen.shape[0]
 
     if real.shape == gen.shape and n_r == n_g:
-        # 一一对应：噪声 = gen - real
+        # One-to-one: noise = gen - real
         signal_power = np.mean(real ** 2, axis=axis_time)
         noise = gen - real
         noise_power = np.mean(noise ** 2, axis=axis_time) + eps
     else:
-        # 不对应：信号 = real 的方差，噪声 = gen 相对 real 均值的偏差
+        # Unpaired: signal = real variance, noise = gen deviation from real mean
         mu_r = np.mean(real, axis=0)
         signal_power = np.mean((real - mu_r) ** 2, axis=0) + eps
         diff = gen - mu_r
@@ -116,8 +116,8 @@ def compute_snr_eeg(
 
 def compute_snr_simple(real_features: np.ndarray, gen_features: np.ndarray, eps: float = 1e-8) -> float:
     """
-    最简单形式：signal = real 特征的方差均值，noise = (gen - mean(real)) 的方差均值，
-    SNR = signal / noise，再转为 dB。
+    Simplest form: signal = mean variance of real features, noise = mean variance of (gen - mean(real)),
+    SNR = signal / noise, then convert to dB.
     """
     real = np.asarray(real_features, dtype=np.float64)
     gen = np.asarray(gen_features, dtype=np.float64)

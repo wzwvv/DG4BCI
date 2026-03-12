@@ -149,15 +149,15 @@ class getSSVEPIntra(Dataset):
     num_groups = 1
     blocks_per_group = num_blocks // num_groups  # 6
 
-    num_samples = 6 - int(6 * ratio)  # 每次选择 1 个
-    # 三组 block 索引：[[0-5], [6-11], [12-17]]
+    num_samples = 6 - int(6 * ratio)  # select 1 block per fold
+    # Three block groups: [[0-5], [6-11], [12-17]]
     groups = [list(range(i * blocks_per_group, (i + 1) * blocks_per_group)) for i in range(num_groups)]
 
     combinations_per_group = [list(itertools.combinations(g, num_samples)) for g in groups]
-    # 检查各组组合数量是否相等，否则取最小长度对齐
+    # Align by minimum length if group sizes differ
     min_len = min(len(c) for c in combinations_per_group)
 
-    # 合并：对应索引的三组组合打平
+    # Merge: flatten corresponding combinations across groups
     # merged = [
     # combinations_per_group[0][i] + combinations_per_group[1][i] + combinations_per_group[2][i]
     # for i in range(min_len)
@@ -214,7 +214,7 @@ class getSSVEPInter(Dataset):
                data = self.load_2Data('../../data2/hzt/ssvep/benchmark40',subject,decay=0.14, segment=1)
            eeg_data = data[0]
            label_data = data[1].reshape(self.Nf,-1)
-           eeg_data = self.filter_bank(eeg_data).reshape(self.Nf,-1,max(self.Nm,1), self.Nc, self.T)  # 第一次赋值  #(self.Nh, max(self.Nm,1), self.Nc, self.T)
+           eeg_data = self.filter_bank(eeg_data).reshape(self.Nf,-1,max(self.Nm,1), self.Nc, self.T)  # (Nf, Nh, Nm, Nc, T)
            if not hasattr(self, 'eeg_data_test'):
                self.eeg_data_test = eeg_data
                self.label_data_test = label_data
@@ -285,11 +285,11 @@ class getSSVEPInter(Dataset):
 
 def cross_subject_split(subjects, num_splits=5):
     splits = []
-    # 每次进行一次跨被试分割
+    # One cross-subject split per iteration
     for i in range(num_splits):
-        # 根据题意每次选择 (i, i+5) 这样的组合
+        # Select test subjects (e.g. (i, i+5) pattern)
         test_subjects = [subjects[i+j*num_splits] for j in range(len(subjects)//num_splits)]
-        # 训练集是除去这两个测试被试的所有被试
+        # Train set = all subjects except test subjects
         train_subjects = [subject for subject in subjects if subject not in test_subjects]
 
         splits.append({

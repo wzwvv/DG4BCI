@@ -99,7 +99,7 @@ class ESNet(nn.Module):
             nn.PReLU(),
             nn.Dropout(self.dropout_level))
 
-        # 两个分类头
+        # Two classification heads
         self.head1 = nn.Sequential(
                     nn.Linear(self.D2, num_classes),
                     nn.Softmax(dim=1)
@@ -172,7 +172,7 @@ class ESNetv2(nn.Module):
             self.enhanced_block(self.F[0], self.F[1], self.dropout_level, self.K, self.S)
         )
 
-        # 计算全连接输入尺寸
+        # Compute fc input size
         self.fcSize = self.calculateOutSize(self.conv_layers, num_channels, T)
         self.fcUnit = self.fcSize[0] * self.fcSize[1] * self.fcSize[2]
         self.D1 = self.fcUnit // 10
@@ -226,7 +226,7 @@ class ESNetv2(nn.Module):
     def calculateOutSize(self, model, nChan, nTime):
         data = torch.randn(1, 1, nChan, nTime)
         out = model(data)
-        return out.shape[1:]  # 不包括 batch
+        return out.shape[1:]  # exclude batch dim
 
     def forward(self, x):
         x = x.to(self.device)

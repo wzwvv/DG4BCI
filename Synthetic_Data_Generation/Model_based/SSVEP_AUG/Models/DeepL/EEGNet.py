@@ -29,10 +29,10 @@ class EEGNet(nn.Module):
         self.dropout = nn.Dropout(self.p)
 
         # First Layer:Temporal Convolution + Spatial Convolution
-        '''时间卷积'''
+        # Temporal convolution
         self.conv1 = nn.Conv2d(1, self.F1, (1, self.kernelength1),  bias=False, padding="same")
         self.bn1_1 = nn.BatchNorm2d(self.F1, momentum=0.01, affine=True, eps=1e-3)
-        '''空间卷积'''
+        # Spatial convolution
         self.Depthwise_Convolution = Conv2dWithConstraint(self.F1, self.F1 * self.D, (num_channels, 1), max_norm=1,
                                                           groups=self.F1, bias=False)
 
@@ -52,7 +52,7 @@ class EEGNet(nn.Module):
 
 
     def forward(self, X):
-        '''前向计算'''
+        # Forward pass
         # First Layer:Temporal Convolution + Spatial Convolution
         X = self.conv1(X)
         X = self.bn1_1(X)

@@ -6,7 +6,7 @@ config = {}
 
 def _init():
     """
-    初始化
+    Initialize config from YAML file.
     """
     parser = argparse.ArgumentParser()
     
@@ -21,11 +21,11 @@ def _init():
 
 def get_global_conf():
     _init()
-    # 获得一个全局变量，不存在则提示读取对应变量失败
+    # Return global config; on failure print read error
     try:
         return config
     except:
-        print('读取失败\r\n')
+        print('Failed to read config.\n')
         return {}
 
 config = get_global_conf()

@@ -31,13 +31,13 @@ MODEL_BASED_AUGS = [
 def fix_random_seed(SEED):
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
-    torch.cuda.manual_seed_all(SEED)  # 如果有多卡
+    torch.cuda.manual_seed_all(SEED)  # for multi-GPU
 
     np.random.seed(SEED)
     random.seed(SEED)
     os.environ['PYTHONHASHSEED'] = str(SEED)
 
-    # cuDNN 相关（可复现性最重要）
+    # cuDNN settings for reproducibility
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     
@@ -128,8 +128,7 @@ def data_aug(data,labels,augtype,info=None):
             labels_out = np.append(labels_out, labels)
         # else: info is None (batch-level call), skip model-based augmentation
 
-    # 最终输出data格式为
-    # raw 144, mult_add 144, mult_reduce 144, noise 144, neg 144, freq1 144, freq2 144
+    # Final output data layout: raw, mult_add, mult_reduce, noise, neg, freq1, freq2 (each 144 samples)
     data_out = data_out.swapaxes(1, 2)
     return data_out, labels_out
 
@@ -137,7 +136,7 @@ def data_aug(data,labels,augtype,info=None):
 def data_noise_f(data, labels, size, n_channels=22):
     new_data = []
     new_labels = []
-    noise_mod_val = 5 #之前是2
+    noise_mod_val = 5  # previously 2
     # print("noise mod: {}".format(noise_mod_val))
     for i in range(len(labels)):
         if labels[i] >= 0:
@@ -253,7 +252,7 @@ def DWTaug_multi(EEGData, EEGLabel):
         Xc = EEGData[mask]
         yc = EEGLabel[mask]
 
-        # 倒序作为配对样本
+        # Reverse order as paired samples
         Xc_R = Xc[::-1]
 
         Xc_aug, yc_aug = DWTAug(Xc, Xc_R, yc, yc)
@@ -350,55 +349,55 @@ def nextpow2(x):
 
 
 def HHTAnalysis(eegRaw, fs):
-    # 进行EMD分解
+    # EMD decomposition
     decomposer = EMD(eegRaw)
-    # 获取EMD分解后的IMF成分
+    # Get IMF components after EMD
     imfs = decomposer.decompose()
-    # 分解后的组分数
+    # Number of components after decomposition
     n_components = imfs.shape[0]
-    # 定义绘图，包括原始数据以及各组分数据
+    # Define figure: raw data and each component
     fig, axes = plt.subplots(n_components + 1, 2, figsize=(10, 7), sharex=True, sharey=False)
-    # 绘制原始数据
+    # Plot raw data
     axes[0][0].plot(eegRaw)
-    # 原始数据的Hilbert变换
+    # Hilbert transform of raw data
     eegRawHT = hilbert(eegRaw)
-    # 绘制原始数据Hilbert变换的结果
+    # Plot Hilbert transform result
     axes[0][0].plot(abs(eegRawHT))
-    # 设置绘图标题
+    # Set plot title
     axes[0][0].set_title('Raw Data')
-    # 计算Hilbert变换后的瞬时频率
+    # Instantaneous frequency after Hilbert transform
     instf, timestamps = tftb.processing.inst_freq(eegRawHT)
-    # 绘制瞬时频率，这里乘以fs是正则化频率到真实频率的转换
+    # Plot instantaneous frequency; multiply by fs to convert normalized freq to Hz
     axes[0][1].plot(timestamps, instf * fs)
-    # 计算瞬时频率的均值和中位数
+    # Mean and median of instantaneous frequency
     axes[0][1].set_title('Freq_Mean{:.2f}----Freq_Median{:.2f}'.format(np.mean(instf * fs), np.median(instf * fs)))
 
-    # 计算并绘制各个组分
+    # Compute and plot each component
     for iter in range(n_components):
-        # 绘制分解后的IMF组分
+        # Plot IMF component
         axes[iter + 1][0].plot(imfs[iter])
-        # 计算各组分的Hilbert变换
+        # Hilbert transform of each component
         imfsHT = hilbert(imfs[iter])
-        # 绘制各组分的Hilber变换
+        # Plot Hilbert transform of component
         axes[iter + 1][0].plot(abs(imfsHT))
-        # 设置图名
+        # Set subplot title
         axes[iter + 1][0].set_title('IMF{}'.format(iter))
-        # 计算各组分Hilbert变换后的瞬时频率
+        # Instantaneous frequency of component after Hilbert transform
         instf, timestamps = tftb.processing.inst_freq(imfsHT)
-        # 绘制瞬时频率，这里乘以fs是正则化频率到真实频率的转换
+        # Plot instantaneous frequency; multiply by fs to convert to Hz
         axes[iter + 1][1].plot(timestamps, instf * fs)
-        # 计算瞬时频率的均值和中位数
+        # Mean and median of instantaneous frequency
         axes[iter + 1][1].set_title(
             'Freq_Mean{:.2f}----Freq_Median{:.2f}'.format(np.mean(instf * fs), np.median(instf * fs)))
     plt.tight_layout()
     plt.show()
 
 
-# 定义HHT的滤波函数，提取部分EMD组分
+# HHT filter: extract (a subset of) EMD components
 def HHTFilter(eegRaw):
-    # 进行EMD分解
+    # EMD decomposition
     decomposer = EMD(eegRaw)
-    # 获取EMD分解后的IMF成分
+    # Get IMF components
     imfs = decomposer.decompose()
     return imfs
 
@@ -417,12 +416,12 @@ def dct_transform(train_x, train_y):
              train_x.shape[-1]]
     # tlist = [0, int(train_x.shape[-1]/5), int(train_x.shape[-1]/5*2), int(train_x.shape[-1]/5*3),
     #          int(train_x.shape[-1]/5*4), train_x.shape[-1]]
-    # 拼接
+    # Concatenate segments
     allXld = []
     allXrd = []
     for k in range(len(llist)):
         random.seed(k)
-        nums = random.sample(range(0, Xl.shape[0]), 11)  # 选取N个元素 TODO
+        nums = random.sample(range(0, Xl.shape[0]), 11)  # sample N elements
         dllist = []
         drlist = []
         for i in range(1, len(nums)):
@@ -441,7 +440,7 @@ def dct_transform(train_x, train_y):
 
 def hs_transform(X, y):
     """
-    考虑ori和aug的对应顺序
+    Consider correspondence between original and augmented samples.
     Parameters
     ----------
     X: input original EEG signals
@@ -481,13 +480,13 @@ def hs_transform(X, y):
     real_list = [clist.index(h) for h in range(0, num_channels)]
     for i in range(len(llist)):
         kl = random.choice([ele for ele in llen if ele != i])
-        L2L = np.concatenate((Xl_left[kl, :, :], Xl_middle[i, :, :], Xl_right[i, :, :]), axis=0)  # 右拼0类左-->0
-        L2L = np.take(L2L, real_list, axis=-2)  # channel 维度重排序 0
+        L2L = np.concatenate((Xl_left[kl, :, :], Xl_middle[i, :, :], Xl_right[i, :, :]), axis=0)  # concat left class -> 0
+        L2L = np.take(L2L, real_list, axis=-2)  # reorder channel dimension
         transformedL2L[i, :, :] = L2L
     for i in range(len(rlist)):
         kr = random.choice([ele for ele in rlen if ele != i])
-        R2R = np.concatenate((Xr_left[i, :, :], Xr_middle[i, :, :], Xr_right[kr, :, :]), axis=0)  # 左拼1类右-->1
-        R2R = np.take(R2R, real_list, axis=-2)  # channel 维度重排序 1
+        R2R = np.concatenate((Xr_left[i, :, :], Xr_middle[i, :, :], Xr_right[kr, :, :]), axis=0)  # concat right class -> 1
+        R2R = np.take(R2R, real_list, axis=-2)  # reorder channel dimension
         transformedR2R[i, :, :] = R2R
     aug_X = np.concatenate((transformedL2L, transformedR2R), axis=0)
     y_la = np.zeros((transformedL2L.shape[0]))
@@ -498,7 +497,7 @@ def freqSur(X):
     transform = FTSurrogate(
         probability=1.,  # defines the probability of actually modifying the input
     )
-    X_tr, _ = transform.operation(torch.as_tensor(X).float(), None, 1, False)  # 空间信息很重要时，设为false，0-1之间相位扰动
+    X_tr, _ = transform.operation(torch.as_tensor(X).float(), None, 1, False)  # False when spatial info matters; phase perturbation in [0,1]
     return X_tr.numpy()
 
 

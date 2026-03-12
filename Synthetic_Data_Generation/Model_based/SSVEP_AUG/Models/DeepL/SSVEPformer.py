@@ -122,13 +122,13 @@ class FFTLayer(nn.Module):
         fft_signal = torch.abs(fft_result[:,:,40:160])
         # print(fft_signal.shape)
         # for _ in range(30):
-        # # 绘制频谱
+        # # Plot spectrum
         #     plt.figure(figsize=(20, 8))
         #     plt.plot([i for i in range(fft_signal.shape[-1])], fft_signal[_].cpu().T, marker='o', label="FFT Magnitude Spectrum")
         #     plt.xlabel("Frequency (Hz)")
         #     plt.ylabel("Magnitude")
         #     plt.title("FFT Spectrum (6-16 Hz)")
-        #     plt.xticks(np.arange(0, 120, 1))  # 设置刻度：0, 0.2, 0.4, ..., 63.8
+        #     plt.xticks(np.arange(0, 120, 1))  # set ticks
         #     plt.grid()
         #     plt.legend()
         #     plt.show()

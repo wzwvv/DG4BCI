@@ -9,6 +9,7 @@ coding:utf-8
 '''
 
 import numpy as np
+from pyhht import EMD, HHT, HHTFilter
 
 # Xs: The training data from each source subject
 # X_tar_t: The training data from target subject

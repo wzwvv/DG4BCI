@@ -12,7 +12,7 @@ class ResidualLinearBlock(nn.Module):
         self.dropout = nn.Dropout(dropout_rate)
         self.layer_norm = nn.LayerNorm(output_dim)
 
-        # 用于调整残差连接维度的投影层（如果需要）
+        # Projection for residual when dims differ (optional)
         self.shortcut = nn.Linear(input_dim, output_dim) if input_dim != output_dim else nn.Identity()
 
     def forward(self, x):
@@ -23,7 +23,7 @@ class ResidualLinearBlock(nn.Module):
         out = self.dropout(out)
 
         out = self.linear2(out)
-        out = self.layer_norm(out + identity)  # 残差连接 + 层归一化
+        out = self.layer_norm(out + identity)  # residual + layer norm
         out = F.leaky_relu(out, 0.2)
         out = self.dropout(out)
 
@@ -62,7 +62,7 @@ class VAE(nn.Module):
         )
 
 
-        # 计算编码器输出维度
+        # Encoder output time dimension
         self.encoder_output_dim = (Nt // 4)
         self.fc_mu = nn.Linear(self.encoder_output_dim, latent_dim)
         self.fc_logvar= nn.Linear(self.encoder_output_dim, latent_dim)
@@ -82,7 +82,7 @@ class VAE(nn.Module):
                 nhead=12,
                 dim_feedforward=1024,
                 dropout=dropout,
-                batch_first=True  # 使用(B, T, C)格式
+                batch_first=True  # (B, T, C) format
             ),
             num_layers=2
         )
@@ -149,19 +149,19 @@ class VAE(nn.Module):
         self.final_conv = nn.Conv2d(2 * Nc, 1, kernel_size=(1, 1), stride=(1, 1))
 
     def reparameterize(self, mu, logvar):
-        """重参数化技巧"""
+        """Reparameterization trick."""
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
 
     def forward(self, x):
-        """编码器前向传播"""
+        """Encoder forward pass."""
         # x shape: (B, 1, Nc, T)
         x1 = self.spatial_conv(x)  # -> (B, 2Nc, 1, T)
         x2 = self.temp_conv1(x1)  # -> (B, 4Nc, 1, T/2)
         x3 = self.temp_conv2(x2)  # -> (B, 8Nc, 1, T/4)
 
-        # 准备Bi-LSTM输入
+        # Prepare Bi-LSTM input
         x3_squeezed = x3.squeeze(2).permute(0, 2, 1)  # -> (B, T/4, 8Nc)
         transformer_out, _ = self.bi_lstm(x3_squeezed)  # -> (B, T/4, 16Nc)
         transformer_out = self.avgpool(transformer_out)
@@ -169,32 +169,32 @@ class VAE(nn.Module):
         transformer_out = transformer_out.permute(0, 2, 1)  # -> (B, 8Nc, T/4)
 
         e0 = torch.cat([transformer_out, x3.squeeze(2)], dim=1)  # -> (B, 16Nc, T/4)
-        # 展平并计算均值和方差
+        # Flatten and compute mean/variance
         # e0_flat = e0.view(e0.size(0), -1)
         # mu = self.fc_mu(e0_flat)
         # logvar = self.fc_logvar(e0_flat)
         mu = torch.zeros(e0.size(0), 16 * self.Nc, self.latent_dim, device=e0.device)
         logvar = torch.zeros_like(mu)
         for i in range(16 * self.Nc):
-            # 获取第i个通道的特征
-            channel_features = e0[:, i, :]  # 形状 (B, T/4)
+            # Get i-th channel features
+            channel_features = e0[:, i, :]  # shape (B, T/4)
 
-            # 计算该通道的均值和方差
+            # Mean and variance for this channel
             mu[:, i, :] = self.fc_mu_list[i](channel_features)
             logvar[:, i, :] = self.fc_logvar_list[i](channel_features)
-        """完整前向传播"""
+        # Full forward: decode
         z = self.reparameterize(mu, logvar)
-        """解码器前向传播"""
-        B, C, D = z.size()  # 获取输入形状: (B, 16*Nc, latent_dim)
+        # Decoder forward
+        B, C, D = z.size()  # input shape: (B, 16*Nc, latent_dim)
 
-        # 使用列表推导式并行处理所有通道
+        # Process all channels (list comprehension)
         x4 = torch.stack([
             self.decoder_input_list[i](z[:, i, :])
             for i in range(16 * self.Nc)
-        ], dim=1)  # 形状 (B, 16*Nc, self.encoder_output_dim)
+        ], dim=1)  # shape (B, 16*Nc, self.encoder_output_dim)
 
-        # 添加高度维度
-        x4 = x4.view(B, C, 1, self.Nt // 4)  # 形状 (B, 16*Nc, 1, Nt//4)
+        # Add height dimension
+        x4 = x4.view(B, C, 1, self.Nt // 4)  # shape (B, 16*Nc, 1, Nt//4)
 
         u1 = self.deconv1(x4)  # -> (B, 4Nc, 1, T/2)
         e1 = torch.cat([u1, x2], dim=1)  # -> (B, 8Nc, 1, T/2)
@@ -205,13 +205,13 @@ class VAE(nn.Module):
         return output, mu, logvar
 
     def generate(self, num_samples):
-        """生成新样本"""
+        """Generate new samples."""
         z = torch.randn(num_samples, self.latent_dim)
         with torch.no_grad():
             return self.decode(z)
 
     def reconstruct(self, x):
-        """重构输入样本"""
+        """Reconstruct input sample."""
         with torch.no_grad():
             mu, _ = self.encode(x)
             return self.decode(mu)
@@ -249,7 +249,7 @@ class VAEv2(nn.Module):
         )
 
 
-        # 计算编码器输出维度
+        # Encoder output dimension
         # self.encoder_output_dim = 16 * Nc * (Nt // 4)
         #
         # self.fc_mu = nn.Linear(self.encoder_output_dim, latent_dim)
@@ -261,7 +261,7 @@ class VAEv2(nn.Module):
                 nhead=12,
                 dim_feedforward=1024,
                 dropout=dropout,
-                batch_first=True  # 使用(B, T, C)格式
+                batch_first=True  # (B, T, C) format
             ),
             num_layers=4
         )
@@ -323,7 +323,7 @@ class VAEv2(nn.Module):
         self.final_conv = nn.Conv2d(1 * Nc, 1, kernel_size=(1, 1), stride=(1, 1))
 
     def encode(self, x):
-        """编码器前向传播"""
+        """Encoder forward pass."""
         # x shape: (B, 1, Nc, T)
         x1 = self.spatial_conv(x)  # -> (B, 2Nc, 1, T)
         x2 = self.temp_conv1(x1)  # -> (B, 4Nc, 1, T/2)
@@ -337,36 +337,36 @@ class VAEv2(nn.Module):
         transformer_out =transformer_out.permute(0, 2, 1)  # -> (B, 16Nc, 1, T/4)
 
         e0 = torch.cat([transformer_out, x3.squeeze(2)], dim=1)  # -> (B, 24Nc, 1, T/4)
-        # 展平并计算均值和方差
-        mean = torch.mean(e0, dim=-1, keepdim=True)  # 形状变为 (B, C, 1)
+        # Flatten and compute mean/variance
+        mean = torch.mean(e0, dim=-1, keepdim=True)  # shape (B, C, 1)
 
-        # 2. 计算方差 (无偏估计)
-        variance = torch.var(e0, dim=-1, keepdim=True, unbiased=True)  # 形状变为 (B, C, 1)
+        # Variance (unbiased)
+        variance = torch.var(e0, dim=-1, keepdim=True, unbiased=True)  # shape (B, C, 1)
 
-        # 3. 计算对数方差 (添加小常数避免 log(0))
-        log_variance = torch.log(variance + 1e-8)  # 形状保持 (B, C, 1)
+        # Log variance (small constant to avoid log(0))
+        log_variance = torch.log(variance + 1e-8)  # shape (B, C, 1)
 
         return mean,log_variance,x3.size(-1)
 
     def reparameterize(self, mu, logvar,T):
-        std = torch.exp(0.5 * logvar)  # 形状 (B, C, 1)
+        std = torch.exp(0.5 * logvar)  # shape (B, C, 1)
 
-        # 2. 扩展 mu 和 std 到目标形状 (B, C, T)
-        mu_expanded = mu.expand(-1, -1, T)  # 复制 T 次
-        std_expanded = std.expand(-1, -1, T)  # 复制 T 次
+        # Expand mu and std to (B, C, T)
+        mu_expanded = mu.expand(-1, -1, T)
+        std_expanded = std.expand(-1, -1, T)
 
-        # 3. 生成与扩展后形状相同的随机噪声
-        eps = torch.randn_like(std_expanded)  # 形状 (B, C, T)
+        # Random noise same shape as expanded
+        eps = torch.randn_like(std_expanded)  # shape (B, C, T)
 
-        # 4. 应用重参数化
-        return mu_expanded + eps * std_expanded  # 形状 (B, C, T)
+        # Reparameterization
+        return mu_expanded + eps * std_expanded  # shape (B, C, T)
 
     def decode(self, z):
-        """解码器前向传播"""
-        # 通过线性层调整维度
+        """Decoder forward pass."""
+        # Linear layer to adjust dimension
         x = z.unsqueeze(2)
 
-        # 解码器前向传播
+        # Decoder forward
         u1 = self.deconv1(x)  # -> (B, 4Nc, 1, T/2)
         u2 = self.deconv2(u1)  # -> (B, 2Nc, 1, T)
         u3 = self.spatial_deconv(u2)  # -> (B, 1Nc, Nc, T)
@@ -375,20 +375,20 @@ class VAEv2(nn.Module):
         return output
 
     def forward(self, x):
-        """完整前向传播"""
+        """Full forward pass."""
         mu, logvar,T = self.encode(x)
         z = self.reparameterize(mu, logvar,T)
         recon_x = self.decode(z)
         return recon_x, mu, logvar
 
     def generate(self, num_samples):
-        """生成新样本"""
+        """Generate new samples."""
         z = torch.randn(num_samples, self.latent_dim)
         with torch.no_grad():
             return self.decode(z)
 
     def reconstruct(self, x):
-        """重构输入样本"""
+        """Reconstruct input sample."""
         with torch.no_grad():
             mu, _ = self.encode(x)
             return self.decode(mu)

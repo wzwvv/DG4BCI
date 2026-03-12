@@ -1,6 +1,6 @@
-# 设计师:Pan YuDong
-# 编写者:God's hand
-# 时间:2022/12/1 16:14
+# Designer: Pan YuDong
+# Author: God's hand
+# Date: 2022/12/1
 import scipy
 from scipy import signal
 import numpy as np
@@ -26,7 +26,7 @@ class TRCA():
         labels = labels
         for fb_i in range(self.Nm):
             for c in range(self.Nf):
-                # 提取当前类别的所有试次数据
+                # Extract all trials for current class
                 if X.ndim == 4:
                     X_c = X[labels == c]
                     X_c = X_c[:, fb_i, :, :]
@@ -34,29 +34,29 @@ class TRCA():
                     raise ValueError(f'X.ndim must be 4 but got {X.shape}')
 
                 n_trials, n_channels, n_samples = X_c.shape
-                # 初始化协方差矩阵
-                S = np.zeros((n_channels, n_channels))  # 组内协方差
-                Q = np.zeros((n_channels, n_channels))  # 组间协方差
-                # 计算协方差矩阵
+                # Initialize covariance matrices
+                S = np.zeros((n_channels, n_channels))  # within-class
+                Q = np.zeros((n_channels, n_channels))  # between-class
+                # Compute covariance
                 for i in range(n_trials):
                     Xi = X_c[i].copy()
-                    Xi -= Xi.mean(axis=1, keepdims=True)  # 中心化
-                    Q += Xi @ Xi.T  # 更新组间协方差
+                    Xi -= Xi.mean(axis=1, keepdims=True)  # center
+                    Q += Xi @ Xi.T  # update between-class
 
-                    # 计算组内协方差（避免重复计算）
+                    # Within-class covariance (avoid double count)
                     for j in range(i + 1, n_trials):
                         Xj = X_c[j].copy()
                         Xj -= Xj.mean(axis=1, keepdims=True)
                         S += Xi @ Xj.T + Xj @ Xi.T
                 Q += 1e-8 * np.eye(n_channels)
                 try:
-                    S_intra_inv = np.linalg.inv(Q)  # 计算类内协方差矩阵的逆
+                    S_intra_inv = np.linalg.inv(Q)  # inverse of within-class covariance
                 except np.linalg.LinAlgError:
-                    # 如果无法计算逆，使用伪逆
+                    # Use pseudo-inverse if singular
                     S_intra_inv = np.linalg.pinv(Q)
-                # 计算广义特征值问题
+                # Generalized eigenvalue problem
                 eigvals, eigvecs = np.linalg.eig(S_intra_inv @ S)
-                sorted_indices = np.argsort(eigvals)[::-1]  # 从大到小排序
+                sorted_indices = np.argsort(eigvals)[::-1]  # sort descending
                 W = eigvecs[:, sorted_indices[:self.n_components]].T
                 self.W[fb_i, c, :] = torch.tensor(W, dtype=torch.float32)
         return self

@@ -30,8 +30,8 @@ def prepare_inputs(arr):
 def fbcca_evaluate(config,train_data, train_aug, train_label, aug_label,
                    test_data,  test_label):
     """
-    FBCCA 去噪前后准确率测试函数（兼容 tensor / numpy / TensorDataset）
-    输入数据必须为 shape [N,1,C,T] 或 [N,C,T]
+    FBCCA accuracy evaluation before/after denoising (supports tensor / numpy / TensorDataset).
+    Input data must have shape [N,1,C,T] or [N,C,T].
     """
 
     train_X_raw = prepare_inputs(train_data)
@@ -44,7 +44,7 @@ def fbcca_evaluate(config,train_data, train_aug, train_label, aug_label,
     test_y = np.array(test_label).flatten()
 
     # ---------------------------
-    # 读取配置参数
+    # Load config parameters
     # ---------------------------
     datasetid = config["train_param"]['datasets']
     Fs = config[f"data_param{datasetid}"]['Fs']
@@ -60,7 +60,7 @@ def fbcca_evaluate(config,train_data, train_aug, train_label, aug_label,
     fbcca = FBCCA(opt)
     def dummy_filter_bank(eeg):
         segments, total_channels, T = eeg.shape
-        assert total_channels == Nc * Nm, f"通道数量不匹配: {total_channels} != {Nc}*{Nm}"
+        assert total_channels == Nc * Nm, f"Channel count mismatch: {total_channels} != {Nc}*{Nm}"
         eeg = eeg.reshape(segments, Nm, Nc, T)
         return eeg
     fbcca.filter_bank = dummy_filter_bank
@@ -168,7 +168,7 @@ def train_on_batch(config,Models,testmethod, device, train_data, train_label,
     train_data = torch.tensor(train_data)
     train_label = torch.tensor(train_label)
     test_data = torch.tensor(test_data)
-    test_label = torch.tensor(test_label)  # 分类标签通常用long类型
+    test_label = torch.tensor(test_label)  # classification labels as long
     
     EEGData_Train = torch.utils.data.TensorDataset(train_data.unsqueeze(1), train_label.unsqueeze(1))
     EEGData_Test = torch.utils.data.TensorDataset(test_data.unsqueeze(1), test_label.unsqueeze(1))
@@ -219,17 +219,17 @@ def train_on_batch(config,Models,testmethod, device, train_data, train_label,
                 scheduler.step(train_acc)
 
         if (epoch+1)%50 == 0:
-            sum_acc = 0.0  # 把这行提前放在外层，整个 test_iter 用一次
+            sum_acc = 0.0  # reset once per test_iter
             total_batches = 0
 
             for data in test_iter:
                 total_batches += 1
-                # ========== 获取输入 ==========
+                # ========== Get input ==========
                 X, y = data
                 X = X.type(torch.FloatTensor).to(device)
                 y = torch.as_tensor(y.reshape(y.shape[0]), dtype=torch.int64).to(device)
 
-                # ========== 模型集成输出（平均 logits） ==========
+                # ========== Ensemble output (average logits) ==========
                 total_logits = 0
                 for es in range(Es):
                     net = Models[es]['model']
@@ -244,7 +244,7 @@ def train_on_batch(config,Models,testmethod, device, train_data, train_label,
 
                 sum_acc += acc
 
-            # ========== 验证集准确率 ==========
+            # ========== Validation accuracy ==========
             val_acc = sum_acc / total_batches
             print(f"epoch:{epoch + 1}, train_loss={train_loss:.3f}, train_acc={train_acc:.3f}, valid_acc={val_acc:.3f}")
 
@@ -268,7 +268,7 @@ def train_on_batch_AUG(config,Models,testmethod, device, train_data, train_label
     train_data = torch.tensor(train_data)
     train_label = torch.tensor(train_label)
     test_data = torch.tensor(test_data)
-    test_label = torch.tensor(test_label)  # 分类标签通常用long类型
+    test_label = torch.tensor(test_label)  # classification labels as long
     EEGData_Train = torch.utils.data.TensorDataset(train_data.unsqueeze(1), train_label.unsqueeze(1))
     EEGData_Test = torch.utils.data.TensorDataset(test_data.unsqueeze(1), test_label.unsqueeze(1))
 
@@ -324,17 +324,17 @@ def train_on_batch_AUG(config,Models,testmethod, device, train_data, train_label
                 scheduler.step(train_acc)
 
         if (epoch+1)%50 == 0:
-            sum_acc = 0.0  # 把这行提前放在外层，整个 test_iter 用一次
+            sum_acc = 0.0  # reset once per test_iter
             total_batches = 0
 
             for data in test_iter:
                 total_batches += 1
-                # ========== 获取输入 ==========
+                # ========== Get input ==========
                 X, y = data
                 X = X.type(torch.FloatTensor).to(device)
                 y = torch.as_tensor(y.reshape(y.shape[0]), dtype=torch.int64).to(device)
 
-                # ========== 模型集成输出（平均 logits） ==========
+                # ========== Ensemble output (average logits) ==========
                 total_logits = 0
                 for es in range(Es):
                     net = Models[es]['model']
@@ -349,7 +349,7 @@ def train_on_batch_AUG(config,Models,testmethod, device, train_data, train_label
 
                 sum_acc += acc
 
-            # ========== 验证集准确率 ==========
+            # ========== Validation accuracy ==========
             val_acc = sum_acc / total_batches
             print(f"epoch:{epoch + 1}, train_loss={train_loss:.3f}, train_acc={train_acc:.3f}, valid_acc={val_acc:.3f}")
 

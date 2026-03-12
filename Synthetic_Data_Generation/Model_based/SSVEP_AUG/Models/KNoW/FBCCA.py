@@ -41,10 +41,10 @@ class FBCCA():
 
     def get_template_signal_with_labels(self,X, labels, targets):
         """
-        X: [segments, Nc, T] 或 [segments, C, T]
-        labels: [segments] 对应每个样本的类别标签
-        targets: 类别列表
-        返回: [Nf, Nc, T] 每个类别的平均模板
+        X: [segments, Nc, T] or [segments, C, T]
+        labels: [segments] class label per sample
+        targets: list of target frequencies/classes
+        Returns: [Nf, Nc, T] mean template per class
         """
         datasetid = config["train_param"]['datasets']
         initfreq = config[f"data_param{datasetid}"]['initfreq']
@@ -112,7 +112,7 @@ class FBCCA():
                 reference_signals[:, fb_i] = self.get_template_signal_with_labels(
                     train_data[:, fb_i], train_labels, targets)
                 if np.isnan(reference_signals).any():
-                    print("警告: 输入yyyyy包含NaN值")
+                    print("Warning: input contains NaN values")
         else:
             reference_signals = self.get_Reference_Signal(num_harmonics, targets)
 

@@ -39,7 +39,7 @@ class EEGDenoiseGenerator_NoSeq(nn.Module):
             nn.Dropout(dropout)
         )
 
-        # ---------- Bottleneck（纯 CNN） ----------
+        # ---------- Bottleneck (pure CNN) ----------
         self.bottleneck = nn.Sequential(
             nn.Conv2d(8*Nc, 16*Nc, kernel_size=(1, 3), padding=(0, 1)),
             nn.BatchNorm2d(16*Nc),
@@ -84,7 +84,7 @@ class EEGDenoiseGenerator_NoSeq(nn.Module):
 
     @staticmethod
     def _align_time(a, b):
-        """裁剪到相同时间长度"""
+        """Crop to same time length."""
         Ta, Tb = a.shape[-1], b.shape[-1]
         T = min(Ta, Tb)
         return a[..., :T], b[..., :T]
@@ -100,7 +100,7 @@ class EEGDenoiseGenerator_NoSeq(nn.Module):
         # -------- Bottleneck --------
         b = self.bottleneck(x3)       # (B, 16Nc, 1, T/4)
 
-        # -------- Statistics（保持你原接口）--------
+        # -------- Statistics (keep original interface) --------
         feat = b.squeeze(2)           # (B, C, T')
         mean1 = feat.mean(dim=2, keepdim=True)
         variance1 = feat.var(dim=2, keepdim=True, unbiased=True)
@@ -218,15 +218,15 @@ class EEGDenoiseGenerator(nn.Module):
         x3_squeezed = x3.squeeze(2).permute(0, 2, 1)  # -> (B, T/4, 8Nc)
         lstm_out, _ = self.bi_lstm(x3_squeezed)       # -> (B, T/4, 16Nc)
         lstm_out = self.avgpool(lstm_out)
-        mean1 = torch.mean(lstm_out.squeeze(2), dim=1, keepdim=True)  # 形状变为 (B, C, 1)
+        mean1 = torch.mean(lstm_out.squeeze(2), dim=1, keepdim=True)  # shape (B, C, 1)
 
-        # 2. 计算方差 (无偏估计)
-        variance1 = torch.var(lstm_out.squeeze(2), dim=1, keepdim=True, unbiased=True)  # 形状变为 (B, C, 1)
+        # Variance (unbiased)
+        variance1 = torch.var(lstm_out.squeeze(2), dim=1, keepdim=True, unbiased=True)  # shape (B, C, 1)
         
-        mean2 = torch.mean(lstm_out.squeeze(2), dim=-1, keepdim=True)  # 形状变为 (B,  1)
+        mean2 = torch.mean(lstm_out.squeeze(2), dim=-1, keepdim=True)  # shape (B, 1)
 
-        # 2. 计算方差 (无偏估计)
-        variance2 = torch.var(lstm_out.squeeze(2), dim=-1, keepdim=True, unbiased=True)  # 形状变为 (B, C, 1)
+        # Variance (unbiased)
+        variance2 = torch.var(lstm_out.squeeze(2), dim=-1, keepdim=True, unbiased=True)  # shape (B, C, 1)
         lstm_out = lstm_out.permute(0, 2, 1).unsqueeze(2)  # -> (B, 16Nc, 1, T/4)
 
         e0 = torch.cat([lstm_out, x3], dim=1)         # -> (B, 24Nc, 1, T/4)
@@ -315,7 +315,7 @@ class EEGDenoiseGeneratorv2(nn.Module):
         #         nhead=12,
         #         dim_feedforward=1024,
         #         dropout=dropout,
-        #         batch_first=True  # 使用(B, T, C)格式
+        #         batch_first=True  # use (B, T, C) format
         #     ),
         #     num_layers=4
         # )
@@ -384,19 +384,19 @@ class EEGDenoiseGeneratorv2(nn.Module):
         transformer_out = transformer_out.permute(0, 2, 1).unsqueeze(2)  # -> (B, 16Nc, 1, T/4)
 
         e0 = torch.cat([transformer_out, x3], dim=1)  # -> (B, 24Nc, 1, T/4)
-        mean1 = torch.mean(transformer_out.squeeze(2), dim=1, keepdim=True)  # 形状变为 (B, C, 1)
+        mean1 = torch.mean(transformer_out.squeeze(2), dim=1, keepdim=True)  # shape (B, C, 1)
 
-        # 2. 计算方差 (无偏估计)
-        variance1 = torch.var(transformer_out.squeeze(2), dim=1, keepdim=True, unbiased=True)  # 形状变为 (B, C, 1)
+        # Variance (unbiased)
+        variance1 = torch.var(transformer_out.squeeze(2), dim=1, keepdim=True, unbiased=True)  # shape (B, C, 1)
         
-        mean2 = torch.mean(transformer_out.squeeze(2), dim=-1, keepdim=True)  # 形状变为 (B,  1)
+        mean2 = torch.mean(transformer_out.squeeze(2), dim=-1, keepdim=True)  # shape (B, 1)
 
-        # 2. 计算方差 (无偏估计)
-        variance2 = torch.var(transformer_out.squeeze(2), dim=-1, keepdim=True, unbiased=True)  # 形状变为 (B, C, 1)
+        # Variance (unbiased)
+        variance2 = torch.var(transformer_out.squeeze(2), dim=-1, keepdim=True, unbiased=True)  # shape (B, C, 1)
 
-        # 3. 计算对数方差 (添加小常数避免 log(0))
-        log_variance1 = torch.log(variance1 + 1e-8)  # 形状保持 (B, C, 1)
-        log_variance2 = torch.log(variance2 + 1e-8)  # 形状保持 (B, C, 1)
+        # Log variance (small constant to avoid log(0))
+        log_variance1 = torch.log(variance1 + 1e-8)  # shape (B, C, 1)
+        log_variance2 = torch.log(variance2 + 1e-8)  # shape (B, C, 1)
         # ----------- Decoding Path ----------- #
         u1 = self.deconv1(e0)  # -> (B, 4Nc, 1, T/2)
         e1 = torch.cat([u1, x2], dim=1)  # -> (B, 8Nc, 1, T/2)

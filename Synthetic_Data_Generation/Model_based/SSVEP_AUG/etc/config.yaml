@@ -8,10 +8,10 @@ data_path:
 
 # Parameters for training procedure
 train_param:
-  datasets: 1         #数据集选择
+  datasets: 1         # dataset selection
   pre_train: True
-  ratio: 0.2          #训练集占比
-  ws: 1.0                 #窗口长度F
+  ratio: 0.2          # train set ratio
+  ws: 1.0                 # window length (s)
   Kf: 5
   bz: 36
   epochs: 300
@@ -24,17 +24,17 @@ train_param:
 model_param:
     Nm: 1
     Bandpass: False
-    KLG: True         #知识层
+    KLG: True         # knowledge layer
     MIX: false
-    DL: True                #深度学习层
+    DL: True                # deep learning layer
     FB: True
     Es: 1
 
 gan_model_param:
-  lambda_G: 1    # 控制G分类损失
-  lambda_D: 1    # 控制D分类损失
-  lambda_vae: 1    #重建回归损失
-  lambda_kl: 1    #重建KL散度损失
+  lambda_G: 1    # weight for G classification loss
+  lambda_D: 1    # weight for D classification loss
+  lambda_vae: 1    # reconstruction regression loss
+  lambda_kl: 1    # reconstruction KL divergence loss
   lr_G: 0.001
   lr_D: 0.001
   wd_D: 0.0001
@@ -82,8 +82,8 @@ data_param3:
 
 
 slclayer_param:
-  initweight: 1           #其他通道初始权重
-  SLC_FIX: True        #通道选择层参数固定
+  initweight: 1           # initial weight for other channels
+  SLC_FIX: True        # fix channel selection layer parameters
 
 TRCA:
   slc_all: False
@@ -150,7 +150,7 @@ SSVEPNet:
   lr: 0.01                       # learning rate
   wd: 0.0003                   # weight decay
   lr_jitter: true             # learning rate scheduler
-  stimulus_type: 12           # 4-class or 12-class
+  stimulus_type: 12           # 4-class or 12-class (number of classes)
 
 SSVEPformer:
   epochs: 100                # number of epochs
@@ -170,7 +170,7 @@ DDGCNN:
   trans_class: DCD           # {DCD, linear, normal_conv}
   act: leakyrelu             # activation layer {relu, prelu, leakyrelu}
   norm: layer                # {batch, layer, instance} normalization
-  n_filters: 128            # 64 or 128
+  n_filters: 128            # 64 or 128 (number of filters)
 
 
 

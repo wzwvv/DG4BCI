@@ -37,7 +37,7 @@ def data_aug(data, labels, size, flag_aug):
         freq_data_add, labels_freq = freq_mod_f(data, labels, size, n_channels=n_channels)
         data_out = freq_data_add
 
-    # 最终输出data格式为
+    # Final output data layout
     # raw 144, mult_add 144, mult_reduce 144, noise 144, neg 144, freq1 144, freq2 144
     return data_out, labels_out
 
@@ -149,54 +149,54 @@ def nextpow2(x):
 
 
 def HHTAnalysis(eegRaw, fs):
-    # 进行EMD分解
+    # EMD decomposition
     decomposer = EMD(eegRaw)
-    # 获取EMD分解后的IMF成分
+    # Get IMF components after EMD
     imfs = decomposer.decompose()
-    # 分解后的组分数
+    # Number of components after decomposition
     n_components = imfs.shape[0]
-    # 定义绘图，包括原始数据以及各组分数据
+    # Figure: raw data and each component
     fig, axes = plt.subplots(n_components + 1, 2, figsize=(10, 7), sharex=True, sharey=False)
-    # 绘制原始数据
+    # Plot raw data
     axes[0][0].plot(eegRaw)
-    # 原始数据的Hilbert变换
+    # Hilbert transform of raw data
     eegRawHT = hilbert(eegRaw)
-    # 绘制原始数据Hilbert变换的结果
+    # Plot Hilbert transform result
     axes[0][0].plot(abs(eegRawHT))
-    # 设置绘图标题
+    # Set plot title
     axes[0][0].set_title('Raw Data')
-    # 计算Hilbert变换后的瞬时频率
+    # Instantaneous frequency after Hilbert transform
     instf, timestamps = tftb.processing.inst_freq(eegRawHT)
-    # 绘制瞬时频率，这里乘以fs是正则化频率到真实频率的转换
+    # Plot instantaneous frequency; multiply by fs to convert to Hz
     axes[0][1].plot(timestamps, instf * fs)
-    # 计算瞬时频率的均值和中位数
+    # Mean and median of instantaneous frequency
     axes[0][1].set_title('Freq_Mean{:.2f}----Freq_Median{:.2f}'.format(np.mean(instf * fs), np.median(instf * fs)))
 
-    # 计算并绘制各个组分
+    # Compute and plot each component
     for iter in range(n_components):
-        # 绘制分解后的IMF组分
+        # Plot IMF component
         axes[iter + 1][0].plot(imfs[iter])
-        # 计算各组分的Hilbert变换
+        # Hilbert transform of each component
         imfsHT = hilbert(imfs[iter])
-        # 绘制各组分的Hilber变换
+        # Plot Hilbert transform of component
         axes[iter + 1][0].plot(abs(imfsHT))
-        # 设置图名
+        # Set subplot title
         axes[iter + 1][0].set_title('IMF{}'.format(iter))
-        # 计算各组分Hilbert变换后的瞬时频率
+        # Instantaneous frequency of component after Hilbert transform
         instf, timestamps = tftb.processing.inst_freq(imfsHT)
-        # 绘制瞬时频率，这里乘以fs是正则化频率到真实频率的转换
+        # Plot instantaneous frequency; multiply by fs to convert to Hz
         axes[iter + 1][1].plot(timestamps, instf * fs)
-        # 计算瞬时频率的均值和中位数
+        # Mean and median of instantaneous frequency
         axes[iter + 1][1].set_title(
             'Freq_Mean{:.2f}----Freq_Median{:.2f}'.format(np.mean(instf * fs), np.median(instf * fs)))
     plt.tight_layout()
     plt.show()
 
 
-# 定义HHT的滤波函数，提取部分EMD组分
+# HHT filter: extract (a subset of) EMD components
 def HHTFilter(eegRaw):
-    # 进行EMD分解
+    # EMD decomposition
     decomposer = EMD(eegRaw)
-    # 获取EMD分解后的IMF成分
+    # Get IMF components after EMD
     imfs = decomposer.decompose()
     return imfs

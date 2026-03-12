@@ -1,6 +1,6 @@
-# 设计师:Pan YuDong
-# 编写者:God's hand
-# 时间:2022/1/28 0:13
+# Designer: Pan YuDong
+# Author: God's hand
+# Date: 2022/1/28
 import numpy as np
 from sklearn.cross_decomposition import CCA
 class CCA_Base():

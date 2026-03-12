@@ -3,8 +3,8 @@
 coding:utf-8
 @File:      FID.py
 @Author:    Ziwei Wang
-@Function:  生成数据评测指标 - Fréchet Inception Distance (FID) 
-            衡量真实与生成特征的相似程度，越小越相似
+@Function:  Evaluation metric for generated data - Fréchet Inception Distance (FID).
+            Measures similarity between real and generated features; lower is more similar.
 =================================================
 '''
 
@@ -13,9 +13,9 @@ import scipy.linalg as scipy_linalg
 
 def compute_fid(real_features: np.ndarray, gen_features: np.ndarray, eps=1e-6, normalize=True) -> float:
     """
-    计算 FID (Fréchet Inception Distance)
-    FID = ||mu_r - mu_g||^2 + Tr(Sigma_r + Sigma_g - 2*sqrt(Sigma_r @ Sigma_g))
-    normalize=True 时先对特征做 z-score（用真实集统计量）
+    Compute FID (Fréchet Inception Distance).
+    FID = ||mu_r - mu_g||^2 + Tr(Sigma_r + Sigma_g - 2*sqrt(Sigma_r @ Sigma_g)).
+    If normalize=True, z-score features first using real-set statistics.
     """
     if normalize:
         real_features, gen_features = _normalize_features_for_fid(real_features, gen_features)
@@ -37,7 +37,7 @@ def compute_fid(real_features: np.ndarray, gen_features: np.ndarray, eps=1e-6, n
 
 
 def _normalize_features_for_fid(real_features: np.ndarray, gen_features: np.ndarray):
-    """用真实集特征的均值和标准差对 real/gen 做 z-score，使 FID 数值更可解释、可比。"""
+    """Z-score real/gen using real-set mean and std so FID values are interpretable and comparable."""
     mu = np.mean(real_features, axis=0)
     std = np.std(real_features, axis=0)
     std = np.where(std < 1e-8, 1.0, std)

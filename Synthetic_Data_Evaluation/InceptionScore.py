@@ -3,9 +3,9 @@
 coding:utf-8
 @File:      InceptionScore.py
 @Author:    Ziwei Wang
-@Function:  生成数据评测指标 - Inception Score (IS)
-            IS = exp(E_x[ KL(p(y|x) || p(y)) ])，衡量生成样本的多样性与判别性
-            对 EEG 使用特征空间上的分类器得到 p(y|x)
+@Function:  Evaluation metric for generated data - Inception Score (IS).
+            IS = exp(E_x[ KL(p(y|x) || p(y)) ]), measures diversity and discriminability of generated samples.
+            For EEG, p(y|x) is obtained from a classifier in feature space.
 =================================================
 '''
 
@@ -22,65 +22,65 @@ def compute_inception_score(
     random_state: int = 42,
 ) -> Tuple[float, float]:
     """
-    计算 Inception Score（基于特征 + 分类器近似）。
-    在真实数据上训练一个分类器，用其预测生成样本的 p(y|x)，再计算 IS。
+    Compute Inception Score (feature + classifier approximation).
+    Train a classifier on real data, predict p(y|x) on generated samples, then compute IS.
 
     Parameters
     ----------
     real_features : np.ndarray, shape (N, D)
-        真实样本的特征向量
+        Real sample feature vectors.
     gen_features : np.ndarray, shape (M, D)
-        生成样本的特征向量
+        Generated sample feature vectors.
     real_labels : np.ndarray, shape (N,), dtype int
-        真实样本的类别标签，取值 [0, num_classes-1]
+        Real sample class labels in [0, num_classes-1].
     num_classes : int
-        类别数
+        Number of classes.
     n_splits : int
-        将生成样本分成 n_splits 份取平均，降低方差（默认 10）
+        Split generated samples into n_splits for averaging to reduce variance (default 10).
     random_state : int
-        随机种子
+        Random seed.
 
     Returns
     -------
     mean_is : float
-        Inception Score 的均值（n_splits 次）
+        Mean Inception Score over n_splits.
     std_is : float
-        Inception Score 的标准差
+        Std of Inception Score.
     """
     try:
         from sklearn.linear_model import LogisticRegression
         from sklearn.preprocessing import StandardScaler
     except ImportError:
-        raise ImportError("InceptionScore 需要 sklearn: pip install scikit-learn")
+        raise ImportError("InceptionScore requires sklearn: pip install scikit-learn")
 
     rng = np.random.default_rng(random_state)
     N, D = real_features.shape
     M = gen_features.shape[0]
     if len(real_labels) != N:
-        raise ValueError(f"real_labels 长度 {len(real_labels)} 与 real_features 样本数 {N} 不一致")
+        raise ValueError(f"real_labels length {len(real_labels)} does not match real_features sample count {N}")
 
-    # 标准化特征（用真实集统计量）
+    # Standardize features using real-set statistics
     scaler = StandardScaler()
     real_scaled = scaler.fit_transform(real_features)
     gen_scaled = scaler.transform(gen_features)
 
-    # 在真实数据上训练分类器，得到 p(y|x) 在生成数据上的估计
+    # Train classifier on real data to get p(y|x) on generated data
     clf = LogisticRegression(max_iter=500, random_state=random_state)
     clf.fit(real_scaled, real_labels)
     p_y_given_x = clf.predict_proba(gen_scaled)  # (M, num_classes)
     p_y_given_x = np.clip(p_y_given_x, 1e-8, 1.0)
 
-    # 边缘分布 p(y)
+    # Marginal p(y)
     p_y = np.mean(p_y_given_x, axis=0)
     p_y = np.clip(p_y, 1e-8, 1.0)
 
-    # 每个样本的 KL(p(y|x) || p(y))，再求 exp(mean(KL))
+    # Per-sample KL(p(y|x) || p(y)), then exp(mean(KL))
     kl = np.sum(p_y_given_x * (np.log(p_y_given_x) - np.log(p_y)), axis=1)
     if n_splits <= 1:
         mean_kl = np.mean(kl)
         return float(np.exp(mean_kl)), 0.0
 
-    # 多份取平均
+    # Average over splits
     scores = []
     indices = rng.permutation(M)
     split_size = M // n_splits
@@ -102,28 +102,28 @@ def compute_inception_score_simple(
     n_bins: int = 10,
 ) -> float:
     """
-    简化版：无分类器，用特征离散化后的类别分布近似 p(y|x)，
-    仅当无法提供 real_labels 时使用，结果与标准 IS 不可直接对比。
+    Simplified: no classifier; approximate p(y|x) by discretized feature histogram.
+    Use when real_labels are not available; results are not directly comparable to standard IS.
 
     Parameters
     ----------
     gen_features : np.ndarray, shape (M, D)
-        生成样本的特征
+        Generated sample features.
     real_labels : optional
-        未使用，仅为接口一致
+        Unused; for API consistency.
     num_classes : optional
-        未使用
+        Unused.
     n_bins : int
-        每维特征分箱数，得到 n_bins^D 个“伪类”（D 大时易爆炸，建议 D 较小或仅用部分维）
+        Bins per dimension; yields n_bins^D "pseudo-classes" (use small D or subset of dims to avoid explosion).
 
     Returns
     -------
     float
-        基于直方图的多样性得分（越大越多样）
+        Histogram-based diversity score (higher = more diverse).
     """
     M, D = gen_features.shape
     if D > 5:
-        # 仅用前几维避免维数灾难
+        # Use first few dimensions to avoid curse of dimensionality
         gen_features = gen_features[:, :5].copy()
         D = 5
     bins_per_dim = min(n_bins, max(2, M // 10))
@@ -136,7 +136,7 @@ def compute_inception_score_simple(
 
 
 if __name__ == "__main__":
-    # quick test, 先提取特征再计算
+    # Quick test: extract features first then compute
     N, M, D = 100, 80, 24
     real_features = np.random.randn(N, D).astype(np.float32)  # replace with your festures
     gen_features = np.random.randn(M, D).astype(np.float32)  # replace with your festures
