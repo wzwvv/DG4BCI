@@ -1,9 +1,10 @@
 <div align="center">
 <h1>Synthetic Data Generation for Brain-Computer Interfaces: Overview, Benchmarking, and Future Directions</h1>
 
-[Ziwei Wang](https://scholar.google.com/citations?user=fjlXqvQAAAAJ&hl=en)<sup>1</sup>, Zhentao He, [Xingyi He](https://github.com/BAY040210)<sup>1</sup>, [Hongbin Wang](https://github.com/WangHongbinary)<sup>1</sup>, [Tianwang Jia](https://github.com/TianwangJia)<sup>1</sup>, Jingwei Luo, [Siyang Li](https://scholar.google.com/citations?user=5GFZxIkAAAAJ&hl=en)<sup>1</sup>, [Xiaoqing chen](https://scholar.google.com/citations?user=LjfCH7cAAAAJ&hl=en), and [Dongrui Wu](https://scholar.google.com/citations?user=UYGzCPEAAAAJ&hl=en)<sup>1 :email:</sup>
+[Ziwei Wang](https://scholar.google.com/citations?user=fjlXqvQAAAAJ&hl=en)<sup>1</sup>, Zhentao He<sup>1</sup>, [Xingyi He](https://github.com/BAY040210)<sup>1</sup>, [Hongbin Wang](https://github.com/WangHongbinary)<sup>1</sup>, [Tianwang Jia](https://github.com/TianwangJia)<sup>1</sup>, Jingwei Luo<sup>1</sup>, [Siyang Li](https://scholar.google.com/citations?user=5GFZxIkAAAAJ&hl=en)<sup>1</sup>, [Xiaoqing chen](https://scholar.google.com/citations?user=LjfCH7cAAAAJ&hl=en)<sup>1 2</sup>, and [Dongrui Wu](https://scholar.google.com/citations?user=UYGzCPEAAAAJ&hl=en)<sup>1 2 :email:</sup>
 
 <sup>1</sup> School of Artificial Intelligence and Automation, Huazhong University of Science and Technology
+<sup>2</sup> Zhongguancun Academy
 
 (<sup>:email:</sup>) Corresponding Author
 
