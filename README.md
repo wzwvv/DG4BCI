@@ -121,7 +121,7 @@ If you find this work helpful, please consider citing our paper:
   author = {Ziwei Wang and Zhentao He and Xingyi He and Hongbin Wang and Tianwang Jia and Jingwei Luo and Siyang Li and Xiaoqing Chen and Dongrui Wu},
   title  = {Synthetic Data Generation for Brain-Computer Interfaces: Overview, Benchmarking, and Future Directions},
   year   = {2026},
-  url    = {https://arxiv.org/abs/2603.12296},
+  url    = {https://arxiv.org/abs/2603.12296v1},
 }
 
 ```
