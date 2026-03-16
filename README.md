@@ -9,6 +9,8 @@
 
 (<sup>:email:</sup>) Corresponding Author
 
+[![DG4BCI](https://img.shields.io/badge/Paper-DG4BCI-2b9348.svg?logo=arXiv)](https://arxiv.org/abs/2603.12296v1)&nbsp;
+
 </div>
 
 This repository contains the source code for our paper **Synthetic Data Generation for Brain-Computer Interfaces: Overview, Benchmarking, and Future Directions**.
@@ -112,10 +114,14 @@ The repository is organized into two main components: **synthetic brain signal g
 
 ---
 
-## Installation
+## 📄 Citation
+If you find this work helpful, please consider citing our paper:
+```
+@Article{wang2026dg4bci,
+  author = {Ziwei Wang and Zhentao He and Xingyi He and Hongbin Wang and Tianwang Jia and Jingwei Luo and Siyang Li and Xiaoqing Chen and Dongrui Wu},
+  title  = {Synthetic Data Generation for Brain-Computer Interfaces: Overview, Benchmarking, and Future Directions},
+  year   = {2026},
+  url    = {https://arxiv.org/abs/2603.12296},
+}
 
-```bash
-git clone https://github.com/wzwvv/DG4BCI.git
-cd DG4BCI
-pip install -r requirements.txt
 ```
