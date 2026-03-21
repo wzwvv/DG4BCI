@@ -113,7 +113,7 @@ The repository is organized into two main components: **synthetic brain signal g
 ```
 
 ## Acknowledgement
-Special thanks to Tiki, my cat, for kindly providing the photo used in one of the illustrations.
+Special thanks to Tiki🐱, my cat, for kindly providing her photo for the figures.
 
 ---
 
