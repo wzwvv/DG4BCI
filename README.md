@@ -112,6 +112,9 @@ The repository is organized into two main components: **synthetic brain signal g
 └── main.py # Entry point for training and evaluation
 ```
 
+## Acknowledgement
+Special thanks to Tiki, my cat, for kindly providing the photo used in one of the illustrations.
+
 ---
 
 ## 📄 Citation
